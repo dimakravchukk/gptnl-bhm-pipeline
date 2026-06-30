@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Large binary outputs — keep .nc fits and CSVs in results/ but exclude
+# anything generated mid-session that shouldn't be versioned
+results/_tmp_*.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Snellius scratch / SLURM logs (too large, environment-specific)
+experiments/
+metadata.csv
+*.log

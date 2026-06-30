@@ -1,0 +1,21 @@
+# Filter-config groups for the toxic_language_detection stage.
+# Sweeps recall/precision tradeoff (threshold) and long-doc recall (max_chunk_length).
+# device, supported_languages, and label maps are fixed by dataset/infrastructure.
+
+main:
+  default: {}
+  thresh_090:
+    ToxicLanguageDetection:
+      threshold: 0.90
+  thresh_095:
+    ToxicLanguageDetection:
+      threshold: 0.95
+  thresh_099:
+    ToxicLanguageDetection:
+      threshold: 0.99
+  chunk_128:
+    ToxicLanguageDetection:
+      max_chunk_length: 128
+  chunk_512:
+    ToxicLanguageDetection:
+      max_chunk_length: 512

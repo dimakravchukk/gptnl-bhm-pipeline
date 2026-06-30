@@ -1,0 +1,20 @@
+# requirements.txt — gptnl-data-curation-pipeline BHM package
+#
+# Tested on Python 3.11.11 (Snellius, Rome partition).
+# Install with: pip install -r requirements.txt
+#
+# To reproduce the exact environment:
+#   python -m venv venv && source venv/bin/activate
+#   pip install -r requirements.txt
+#   cd src && pytest tests/ -v
+
+arviz==0.17.1
+jax==0.4.30
+jaxlib==0.4.30
+numpy==1.23.0
+numpyro==0.19.0
+pandas==2.3.3
+pytest==8.4.0
+PyYAML==6.0
+scikit-learn==1.6.0
+scipy==1.12.0

@@ -1,0 +1,48 @@
+# Dataset short-name → absolute input path.
+# Downstream stages (hf outputs used as inputs) use the same scheme.
+
+# === Raw source datasets ===
+eu_parliament:     /projects/0/prjs0986/energy_studies/shared/eu_parliament_32files
+am_stories:        /projects/0/prjs0986/energy_studies/datasets/american-stories
+am_stories_10pct:  /projects/0/prjs0986/energy_studies/shared/am_stories_32files_10pct
+am_stories_25pct:  /projects/0/prjs0986/energy_studies/shared/am_stories_32files_25pct
+am_stories_50pct:  /projects/0/prjs0986/energy_studies/shared/am_stories_32files_50pct
+am_stories_100pct: /projects/0/prjs0986/energy_studies/shared/am_stories_32files_100pct
+cc_github:         /projects/0/prjs0986/energy_studies/datasets/cc_github_opencode
+cc_german:         /projects/0/prjs0986/energy_studies/datasets/cc_german-pd
+cc_english:        /projects/0/prjs0986/energy_studies/datasets/cc_english_pd
+cc_openalex:       /projects/0/prjs0986/energy_studies/datasets/cc_openalex
+kb_books:          /projects/0/prjs0986/energy_studies/datasets/kb-pd-books
+naturalis:         /projects/0/prjs0986/energy_studies/datasets/naturalis
+dansknaw:          /projects/0/prjs0986/energy_studies/datasets/dansknaw
+dpc:               /projects/0/prjs0986/energy_studies/datasets/dpc
+auditdienst:       /projects/0/prjs0986/energy_studies/datasets/auditdienstrijk
+belgian:           /projects/0/prjs0986/energy_studies/datasets/belgian-journal
+woogle:            /projects/0/prjs0986/energy_studies/datasets/woogle
+tweedekamer:       /projects/0/prjs0986/energy_studies/datasets/tweedekamer
+rechtspraak:       /projects/0/prjs0986/energy_studies/datasets/rechtspraak
+small_rechtspraak: /projects/0/prjs0986/energy_studies/datasets/rechtspraak
+small_tweedekamer: /projects/0/prjs0986/energy_studies/datasets/tweedekamer
+small_cc_openalex: /projects/0/prjs0986/energy_studies/datasets/cc_openalex
+
+
+# === Heuristic-filtering outputs ===
+eu_parliament_hf:  /gpfs/home5/dkravchuk/experiments/heuristic_filtering/eu_parliament/default__32t_16c__r1/output
+am_stories_hf:     /gpfs/home5/dkravchuk/experiments/heuristic_filtering/am_stories/default__32t_16c__r1/output
+woogle_hf:         /gpfs/home5/dkravchuk/experiments/heuristic_filtering/woogle_str_norm/default__16t_4tpj_64c__r1/output
+cc_openalex_hf:    /gpfs/home5/dkravchuk/experiments/heuristic_filtering/cc_openalex_str_norm/default__16t_4tpj_64c__r1/output
+cc_github_hf:      /gpfs/home5/dkravchuk/experiments/heuristic_filtering/cc_github_str_norm/default__16t_4tpj_64c__r1/output
+
+# === String-normalisation outputs ===
+am_stories_str_norm:        /gpfs/home5/dkravchuk/experiments/string_normalization/am_stories/default__16t_16c__r1/output
+am_stories_str_norm_32t:    /gpfs/home5/dkravchuk/experiments/string_normalization/am_stories/default__32t_8tpj_128c__r1/output
+woogle_str_norm:            /gpfs/home5/dkravchuk/experiments/string_normalization/woogle/default__16t_4tpj_64c__r1/output
+woogle_str_norm_32t:        /gpfs/home5/dkravchuk/experiments/string_normalization/woogle/default__32t_8tpj_128c__r1/output
+cc_github_str_norm:         /gpfs/home5/dkravchuk/experiments/string_normalization/cc_github/default__16t_4tpj_64c__r1/output
+cc_github_str_norm_32t:     /gpfs/home5/dkravchuk/experiments/string_normalization/cc_github/default__32t_8tpj_128c__r1/output
+small_cc_github_str_norm:   /gpfs/home5/dkravchuk/experiments/string_normalization/cc_github/default__16t_4tpj_64c__r1/output
+cc_openalex_str_norm:       /gpfs/home5/dkravchuk/experiments/string_normalization/cc_openalex/default__16t_4tpj_64c__r1/output
+small_cc_openalex_str_norm: /gpfs/home5/dkravchuk/experiments/string_normalization/cc_openalex/default__16t_4tpj_64c__r1/output
+kb_books_str_norm_8t:       /gpfs/home5/dkravchuk/experiments/string_normalization/kb_books/default__8t_8tpj_128c__r1/output
+naturalis_str_norm_8t:      /gpfs/home5/dkravchuk/experiments/string_normalization/naturalis/default__8t_8tpj_128c__r1/output
+

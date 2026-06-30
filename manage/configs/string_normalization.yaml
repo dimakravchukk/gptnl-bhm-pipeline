@@ -1,0 +1,13 @@
+# Filter-config groups for the string_normalization stage.
+
+main:
+  default: {}
+  NFC:
+    FTFYFormatter:
+      normalization: NFC
+  NFD:
+    FTFYFormatter:
+      normalization: NFD
+  NFKC:
+    FTFYFormatter:
+      normalization: NFKC

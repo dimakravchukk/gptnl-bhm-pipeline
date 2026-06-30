@@ -1,0 +1,420 @@
+# Experiment grid definitions.
+# configs_group references a group name in configs/<stage>.yaml.
+# configs: all  →  every key in that group (expanded by grid.py).
+
+# ── Heuristic filtering ────────────────────────────────────────────────────────
+
+am_stories_docs_scaling:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: all
+  datasets: [am_stories_25pct, am_stories_100pct]
+  n_tasks: [16]
+  cpus_per_task: [16]
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+eu_parliament_hf:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: all
+  datasets: [eu_parliament]
+  n_tasks: [4, 8, 16, 32]
+  cpus_per_task: [16]
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+eu_parliament_cpt1_hf:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: [default]
+  datasets: [eu_parliament]
+  n_tasks: [16]
+  cpus_per_task: [1]
+  replicates: 1
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+smoke_test:
+  stage: heuristic_filtering
+  configs_group: smoke_test
+  configs: [smoke_test]
+  datasets: [cc_github]
+  n_tasks: [16]
+  cpus_per_task: [16]
+  replicates: 4
+  partition: rome
+  time: "00:30:00"
+  limit: 10000
+
+parallel_4_hf_test:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: [default]
+  datasets: [eu_parliament]
+  n_tasks: [16]
+  cpus_per_task: [64]
+  tasks_per_job: 4
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+parallel_8_hf_test:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: [default]
+  datasets: [eu_parliament]
+  n_tasks: [16]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+parallel_4_hf_no_lang:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: [no_language]
+  datasets: [eu_parliament]
+  n_tasks: [16]
+  cpus_per_task: [64]
+  tasks_per_job: 4
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+parallel_8_hf_no_lang:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: [no_language]
+  datasets: [eu_parliament]
+  n_tasks: [16]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+parallel_32_hf_test:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: [default]
+  datasets: [eu_parliament, am_stories]
+  n_tasks: [32]
+  cpus_per_task: [128]
+  tasks_per_job: 32
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+hf_parallel_4tpj_str_norm:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: [default]
+  datasets: [woogle_str_norm, cc_github_str_norm, am_stories_str_norm, cc_openalex_str_norm]
+  n_tasks: [16]
+  cpus_per_task: [64]
+  tasks_per_job: 4
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+am_stories_ro_alpha_sweep:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [am_stories_str_norm]
+  n_tasks: [16]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+am_stories_32t_ro_alpha_sweep:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [am_stories_str_norm_32t]
+  n_tasks: [32]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+woogle_ro_alpha_sweep:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [woogle_str_norm]
+  n_tasks: [16]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "04:00:00"
+  limit: -1
+
+cc_openalex_ro_alpha_sweep:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [cc_openalex_str_norm]
+  n_tasks: [16]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "04:00:00"
+  limit: -1
+
+woogle_32t_ro_alpha_sweep:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [woogle_str_norm_32t]
+  n_tasks: [32]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+cc_github_ro_alpha_sweep:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [cc_github_str_norm_32t]
+  n_tasks: [32]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "04:00:00"
+  limit: -1
+
+small_cc_github_str_norm:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [small_cc_github_str_norm]
+  n_tasks: [16]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "04:00:00"
+  limit: 1000
+
+small_cc_openalex_str_norm:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [small_cc_openalex_str_norm]
+  n_tasks: [16]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "04:00:00"
+  limit: 1000
+
+hf_small_str_norm_8t:
+  stage: heuristic_filtering
+  configs_group: ablations
+  configs: [default]
+  datasets: [kb_books_str_norm_8t, naturalis_str_norm_8t]
+  n_tasks: [8]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+hf_small_str_norm_8t_ro_alpha_sweep:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: all
+  datasets: [kb_books_str_norm_8t, naturalis_str_norm_8t]
+  n_tasks: [8]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+# ── Toxic language detection ───────────────────────────────────────────────────
+
+toxic_language_detection:
+  stage: toxic_language_detection
+  configs_group: main
+  configs: [default]
+  datasets: [eu_parliament_hf]
+  n_tasks: [16]
+  cpus_per_task: [16]
+  replicates: 3
+  partition: rome
+  time: "04:00:00"
+  limit: -1
+
+toxic_full:
+  stage: toxic_language_detection
+  configs_group: main
+  configs: all
+  datasets: [eu_parliament_hf, am_stories_hf]
+  n_tasks: [4, 8, 16, 32]
+  cpus_per_task: [16]
+  replicates: 3
+  partition: rome
+  time: "04:00:00"
+  limit: -1
+
+toxic_str_norm_hf_r1:
+  stage: toxic_language_detection
+  configs_group: main
+  configs: [default]
+  datasets: [woogle_hf, cc_github_hf, cc_openalex_hf, am_stories_hf]
+  n_tasks: [16]
+  cpus_per_task: [64]
+  tasks_per_job: 4
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "01:00:00"
+  limit: 200
+
+# ── String normalisation ───────────────────────────────────────────────────────
+
+string_normalization_am_stories:
+  stage: string_normalization
+  configs_group: main
+  configs: all
+  datasets: [am_stories]
+  n_tasks: [16]
+  cpus_per_task: [16]
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+string_normalization_eu_parliament:
+  stage: string_normalization
+  configs_group: main
+  configs: all
+  datasets: [eu_parliament]
+  n_tasks: [8]
+  cpus_per_task: [16]
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+string_normalization_parallel_4tpj:
+  stage: string_normalization
+  configs_group: main
+  configs: all
+  datasets: [woogle, cc_github, am_stories, cc_openalex]
+  n_tasks: [16]
+  cpus_per_task: [64]
+  tasks_per_job: 4
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 3
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+string_normalization_32t_8tpj:
+  stage: string_normalization
+  configs_group: main
+  configs: [default]
+  datasets: [cc_github, am_stories, woogle]
+  n_tasks: [32]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+string_normalization_small_8t:
+  stage: string_normalization
+  configs_group: main
+  configs: [default]
+  datasets: [kb_books, naturalis]
+  n_tasks: [8]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+anchor_str_norm_forms:
+  stage: string_normalization
+  configs_group: main
+  configs: [NFC, NFD, NFKC]
+  datasets: [small_rechtspraak, small_tweedekamer, small_cc_openalex]
+  n_tasks: [8]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "02:00:00"
+  limit: 1000

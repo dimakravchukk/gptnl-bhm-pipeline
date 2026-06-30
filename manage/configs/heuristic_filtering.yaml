@@ -1,0 +1,112 @@
+# Filter-config groups for the heuristic_filtering stage.
+# Keys starting with _ are anchors only; grid.py skips them.
+# Values that reach the pipeline CLI must be strings (even numeric-looking ones).
+
+_all_pass_language: &all_pass_language
+  language_threshold: "0.0"
+
+_all_pass_nordic: &all_pass_nordic
+  max_digit_fraction: "1.0"
+  min_n_char:         "0"
+  min_mean_med_char:  "0"
+  min_mean_med_word:  "0"
+
+_all_pass_gopher_qual: &all_pass_gopher_qual
+  min_doc_words:             "null"
+  max_doc_words:             "null"
+  min_avg_word_length:       "null"
+  max_avg_word_length:       "null"
+  max_symbol_word_ratio:     "1.0"
+  max_bullet_lines_ratio:    "1.0"
+  max_ellipsis_lines_ratio:  "1.0"
+  max_non_alpha_words_ratio: "1.0"
+  min_stop_words:            "0"
+
+_all_pass_gopher_rep: &all_pass_gopher_rep
+  dup_line_frac:      "1.0"
+  dup_para_frac:      "1.0"
+  dup_line_char_frac: "1.0"
+  dup_para_char_frac: "1.0"
+  top_n_grams: [[2, 0.0], [3, 0.0], [4, 0.0]]
+  dup_n_grams: [[5, 0.0], [6, 0.0], [7, 0.0], [8, 0.0], [9, 0.0], [10, 0.0]]
+
+# --- Main ablation set ---
+ablations:
+  # All filters pass everything — used as the no-filter baseline.
+  # Quoted because "null" is a pipeline argument value, not YAML null.
+  "null":
+    LanguageFilter:          *all_pass_language
+    NordicPileQualityFilter: *all_pass_nordic
+    GopherQualityFilter:     *all_pass_gopher_qual
+    GopherRepetitionFilter:  *all_pass_gopher_rep
+
+  # Production defaults — empty dict means no overrides.
+  default: {}
+
+  # Single-filter ablations
+  no_language:
+    LanguageFilter: *all_pass_language
+  no_nordic:
+    NordicPileQualityFilter: *all_pass_nordic
+  no_gopher_qual:
+    GopherQualityFilter: *all_pass_gopher_qual
+  no_gopher_rep:
+    GopherRepetitionFilter: *all_pass_gopher_rep
+
+  # Threshold sweeps
+  sweep_lang050:
+    LanguageFilter:
+      language_threshold: "0.50"
+  sweep_lang080:
+    LanguageFilter:
+      language_threshold: "0.80"
+  sweep_nchar025:
+    NordicPileQualityFilter:
+      min_n_char: "25"
+  sweep_nchar100:
+    NordicPileQualityFilter:
+      min_n_char: "100"
+  sweep_alpha060:
+    GopherQualityFilter:
+      max_non_alpha_words_ratio: "0.6"
+  sweep_alpha100:
+    GopherQualityFilter:
+      max_non_alpha_words_ratio: "1.0"
+  sweep_dupline020:
+    GopherRepetitionFilter:
+      dup_line_frac: "0.20"
+  sweep_dupline050:
+    GopherRepetitionFilter:
+      dup_line_frac: "0.50"
+
+# --- en/nl language fix + max_non_alpha_words_ratio sweep ---
+# Kept separate from ablations so it never bleeds into other grids.
+ro_alpha_sweep:
+  ro_alpha060:
+    LanguageFilter:
+      languages: [en, nl]
+      language_threshold: "0.65"
+    GopherQualityFilter:
+      max_non_alpha_words_ratio: "0.6"
+  ro_alpha065:
+    LanguageFilter:
+      languages: [en, nl]
+      language_threshold: "0.65"
+    GopherQualityFilter:
+      max_non_alpha_words_ratio: "0.65"
+  ro_alpha075:
+    LanguageFilter:
+      languages: [en, nl]
+      language_threshold: "0.65"
+    GopherQualityFilter:
+      max_non_alpha_words_ratio: "0.75"
+  ro_alpha080:
+    LanguageFilter:
+      languages: [en, nl]
+      language_threshold: "0.65"
+    GopherQualityFilter:
+      max_non_alpha_words_ratio: "0.8"
+
+# --- Smoke-test config (isolated so it never appears in other grids) ---
+smoke_test:
+  smoke_test: {}
