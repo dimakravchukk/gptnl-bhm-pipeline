@@ -60,11 +60,14 @@ def short_corpus(c: str) -> str:
 # ── numbers registry ─────────────────────────────────────────────────────────
 
 NUMBERS: list[dict] = []
+SECTIONS = ["Headline numbers", "In-sample error", "Ranges quoted in the text",
+            "Per-corpus zero-shot values (corpora named in the text)", "Provenance checks"]
+QUOTED_CORPORA = ["cc_github", "woogle", "naturalis", "kb_books", "cc_openalex"]
 
 
-def cite(key: str, value, desc: str, source: str, fmt: str = "{:.1f}"):
+def cite(key: str, value, desc: str, source: str, fmt: str = "{:.1f}", section: str = SECTIONS[0]):
     text = value if isinstance(value, str) else fmt.format(value)
-    NUMBERS.append({"key": key, "value": text, "description": desc, "source": source})
+    NUMBERS.append({"key": key, "value": text, "description": desc, "source": source, "section": section})
     return value
 
 
@@ -213,6 +216,23 @@ def table_calibration() -> pd.DataFrame:
                  f"share of jobs in 94% interval (%)", f"results/calibration_{st}.csv (model={m}, mean of in_hdi94)")
         cite(f"cal.{st}.n_jobs", int(g["n"].iloc[0]), f"{STAGE_LABEL[st]}: jobs in calibration",
              f"results/calibration_{st}.csv", fmt="{:d}")
+        src = f"results/calibration_{st}.csv"
+        variants = [(m, "pit", "in-sample PIT") for m in g.index] + [("bhm", "pit_loo", "LOO-PIT")]
+        for m, col, what in variants:
+            x = c.loc[c["model"] == m, col].dropna()
+            if x.empty:
+                continue
+            tag = "loo" if col == "pit_loo" else "ins"
+            for stat, v, d in (("lt03", 100 * (x < 0.03).mean(), "share of jobs with PIT < 0.03 (%)"),
+                               ("gt97", 100 * (x > 0.97).mean(), "share of jobs with PIT > 0.97 (%)"),
+                               ("mean", x.mean(), "mean PIT (0.5 = unbiased)")):
+                cite(f"pit.{st}.{m}.{tag}.{stat}", v, f"{STAGE_LABEL[st]}, {plain_label(m)}, {what}: {d}",
+                     f"{src} (model={m}, column={col})", fmt="{:.3f}" if stat == "mean" else "{:.1f}")
+        k = c.loc[c["model"] == "bhm", "pareto_k"].dropna()
+        if not k.empty:
+            cite(f"pit.{st}.bhm.loo.pareto_k_gt07", f"{int((k > 0.7).sum())}/{len(k)} (max {k.max():.2f})",
+                 f"{STAGE_LABEL[st]}, BHM LOO-PIT: jobs with Pareto k > 0.7 (PSIS-LOO unreliable)",
+                 f"{src} (model=bhm, column=pareto_k)")
         frames.append((100 * g["cov"]).rename(f"{st} 94\\% cov."))
     df = pd.concat(frames, axis=1).loc[ordered_models(frames[0].index)]
     df.index = [label(m) for m in df.index]
@@ -297,6 +317,93 @@ def table_prior_sensitivity() -> None:
                     "String normalisation: zero-shot BHM runtime MAPE (\\%) per corpus under both gamma0 priors.")
 
 
+def table_insample_mape() -> None:
+    """In-sample MAPE, cell-level (benchmark definition) and job-level."""
+    cols = {"rt_mape": "RT cell", "e_mape": "E cell", "rt_mape_job": "RT job", "e_mape_job": "E job"}
+    frames = []
+    for st in ("hf", "sn"):
+        src = f"results/insample_mape_{st}.csv"
+        d = pd.read_csv(RES / src.removeprefix("results/")).set_index("model")
+        for m, r in d.iterrows():
+            for c, lab in cols.items():
+                cite(f"ins.{st}.{m}.{c}", r[c], f"{STAGE_LABEL[st]}, in-sample, {plain_label(m)}: "
+                     f"{'runtime' if c.startswith('rt') else 'energy'} MAPE, "
+                     f"{'job-level (each job vs its own prediction)' if c.endswith('job') else 'cell-level (cell means, benchmark definition)'} (%)",
+                     f"{src} (model={m}, column={c})", fmt="{:.3g}", section=SECTIONS[1])
+        frames.append(d[list(cols)].rename(columns={c: f"{st} {lab}" for c, lab in cols.items()}))
+    df = pd.concat(frames, axis=1).loc[ordered_models(frames[0].index)]
+    df.index = [label(m) for m in df.index]
+    write_table(df, "insample_mape",
+                "In-sample error (\\%): every model fit on all jobs. Cell-level compares the per-job median "
+                "prediction with the measured mean per configuration cell (the benchmark definition); job-level "
+                "compares each job with its own prediction and so includes job-to-job runtime noise and power "
+                "variation.", float_fmt="{:.3g}")
+
+
+def cite_quoted(bench: dict[str, pd.DataFrame]) -> None:
+    """Ranges and per-corpus values that the text quotes directly."""
+    sec = SECTIONS[2]
+    plain = ["bhm", "complete_pooling", "rf", "gbm", "gp", "mlp"]
+    for st, b in bench.items():
+        med = b[b["model"].isin(plain)].groupby("model")["rt_mape"].median()
+        cite(f"range.{st}.no_meta.rt_mape_median", f"{med.min():.1f}–{med.max():.1f}",
+             f"{STAGE_LABEL[st]}, zero-shot: range of median runtime MAPE over models without metadata "
+             f"({', '.join(plain_label(m) for m in plain)}) (%)",
+             f"results/benchmark_{st}.csv (models without metadata, median of rt_mape)", section=sec)
+    sn = bench["sn"]
+    trees = ["rf+meta", "rf+meta_all", "gbm+meta_all"]
+    med = sn[sn["model"].isin(trees)].groupby("model")["rt_mape"].median()
+    cite("range.sn.trees_with_features.rt_mape_median", f"{med.min():.1f}–{med.max():.1f}",
+         "String normalisation, zero-shot: range of median runtime MAPE for tree models with features "
+         f"({', '.join(plain_label(m) for m in trees)}; Gradient boosting + meta is "
+         f"{sn.loc[sn.model == 'gbm+meta', 'rt_mape'].median():.1f} and not in this range) (%)",
+         "results/benchmark_sn.csv (median of rt_mape)", section=sec)
+    hf = bench["hf"]
+    gh = hf[(hf["corpus"] == "cc_github") & hf["model"].isin(plain)]["rt_mape"]
+    cite("range.hf.cc_github.no_meta.rt_mape", f"{gh.min():.0f}–{gh.max():.0f}",
+         "Filtering, zero-shot, cc_github: runtime MAPE range over models without metadata (%)",
+         "results/benchmark_hf.csv (corpus=cc_github_str_norm)", section=sec)
+    for st in ("hf", "sn"):
+        hw = pd.read_csv(RES / f"hw_share_{st}.csv", index_col="corpus").drop(index=["median", "pooled"]) * 100
+        spread = hw["in_sample"].max() - hw["in_sample"].min()
+        cite(f"range.{st}.hw_in_sample.spread", spread, f"{STAGE_LABEL[st]}: spread (max − min) of in-sample "
+             "hardware share across corpora (percentage points)", f"results/hw_share_{st}.csv (column in_sample)",
+             fmt="{:.2f}", section=sec)
+
+    sec = SECTIONS[3]
+    for st, b in bench.items():
+        for corpus in QUOTED_CORPORA:
+            g = b[b["corpus"] == corpus]
+            for m in ordered_models(g["model"].unique()):
+                r = g[g["model"] == m].iloc[0]
+                if pd.isna(r["rt_mape"]):
+                    continue
+                cite(f"zs.{st}.{corpus}.{m}", f"{r['rt_mape']:.1f} / {r['e_mape']:.1f}",
+                     f"{STAGE_LABEL[st]}, zero-shot, {corpus}, {plain_label(m)}: runtime / energy MAPE (%)",
+                     f"results/benchmark_{st}.csv (corpus={corpus}{'_str_norm' if st == 'hf' else ''}, model={m})",
+                     section=sec)
+
+    sec = SECTIONS[4]
+    nc = pd.read_csv(RES / "benchmark_sn_noncentered.csv")
+    r = nc[(nc["model"] == "bhm") & (nc["corpus"] == "cc_github")].iloc[0]
+    cite("prov.sn.cc_github.production_setting", f"{r['rt_mape']:.1f} (R-hat {r['rhat_max']:.3f})",
+         "String normalisation, zero-shot, cc_github, BHM under the production sampler setting (non-centred, "
+         "target_accept 0.95): runtime MAPE (%) and R-hat — the unconverged fold behind the earlier 21.4% median",
+         "results/benchmark_sn_noncentered.csv (model=bhm, corpus=cc_github)", section=sec)
+    i0 = pd.read_csv(RES / "index0_check.csv")
+    for held in i0["held_out"].unique():
+        r = i0[(i0["held_out"] == held) & (i0["index"] == 0)].iloc[0]
+        cite(f"prov.index0.{short_corpus(held)}", f"{r['rt_mape']:.1f} (thesis {r['thesis_rt_mape']:.0f})",
+             f"Filtering, zero-shot, {short_corpus(held)} scored with corpus index 0 (am_stories) parameters: "
+             "runtime MAPE (%) — test of the suspected unseen-corpus → index 0 bug",
+             f"results/index0_check.csv (held_out={held}, index=0)", section=sec)
+    prod = pd.read_csv(RES / "production_vs_refit.csv")
+    for _, r in prod[prod["flag"] == "<<"].iterrows():
+        cite(f"prov.flag.{r['stage']}.{r['item'].replace(' ', '.')}", f"{float(r['production']):.1f} → {float(r['refit']):.1f}",
+             f"{STAGE_LABEL[r['stage']]}: {r['block']}, {r['item']} — production setting → uniform refit "
+             "(change > 3 points)", "results/production_vs_refit.csv", section=sec)
+
+
 # ── figures ──────────────────────────────────────────────────────────────────
 
 def _style():
@@ -373,23 +480,28 @@ def fig_hw_share() -> None:
 
 def fig_pit() -> None:
     cal = {st: pd.read_csv(RES / f"calibration_{st}.csv") for st in ("hf", "sn")}
-    models = ordered_models(cal["hf"]["model"].unique())
-    fig, axes = plt.subplots(2, len(models), figsize=(7.0, 2.8), sharex=True, sharey=True, constrained_layout=True)
+    short = {"bhm": "BHM", "complete_pooling": "Compl. pool.", "no_pooling": "No pool.", "rf": "RF",
+             "gbm": "GBM", "gp": "GP", "mlp": "MLP"}
+    panels = [("bhm", "pit_loo", "BHM\nLOO-PIT")] + [
+        (m, "pit", f"{short[m]}\nin-sample") for m in ordered_models(cal["hf"]["model"].unique())]
+    fig, axes = plt.subplots(2, len(panels), figsize=(7.0, 3.0), sharex=True, sharey=True, constrained_layout=True)
     bins = np.linspace(0, 1, 11)
     for r, st in enumerate(("hf", "sn")):
-        for c, m in enumerate(models):
+        for c, (m, col, title) in enumerate(panels):
             ax = axes[r, c]
             g = cal[st][cal[st]["model"] == m]
-            ax.hist(g["pit"], bins=bins, density=True, color=BLUE, edgecolor="white", linewidth=1)
+            ax.hist(g[col], bins=bins, density=True, color=BLUE, edgecolor="white", linewidth=1)
             ax.axhline(1, color=TEXT_2, lw=0.8, ls="--")
-            ax.text(0.5, 0.97, f"{100 * g['in_hdi94'].mean():.0f}% in 94%", transform=ax.transAxes,
-                    ha="center", va="top", fontsize=6.5, color=TEXT_2)
+            if col == "pit":
+                ax.text(0.5, 0.97, f"{100 * g['in_hdi94'].mean():.0f}% in 94%", transform=ax.transAxes,
+                        ha="center", va="top", fontsize=6.5, color=TEXT_2)
             if r == 0:
-                ax.set_title(plain_label(m), fontsize=7.5)
+                ax.set_title(title, fontsize=7)
             if c == 0:
                 ax.set_ylabel(f"{'Filtering' if st == 'hf' else 'Normalisation'}\ndensity")
             ax.set_xticks([0, 0.5, 1])
-    fig.supxlabel("PIT of measured runtime (uniform = calibrated)", fontsize=8, color=TEXT_2)
+    fig.supxlabel("PIT of measured runtime (uniform = calibrated)\nFirst column: BHM leave-one-job-out (PSIS-LOO). "
+                  "Other columns: in-sample, model fit on all jobs.", fontsize=7, color=TEXT_2)
     fig.savefig(OUT / "fig_pit_in_sample.pdf")
     plt.close(fig)
 
@@ -405,9 +517,14 @@ def write_numbers(bench: dict[str, pd.DataFrame]) -> None:
         cite(f"data.{st}.n_folds", b["corpus"].nunique(), f"{STAGE_LABEL[st]}: zero-shot folds (corpora)",
              f"results/benchmark_{st}.csv", fmt="{:d}")
     lines = ["# Numbers cited in the paper", "",
-             "Generated by `make_paper_assets.py` — regenerate, don't edit. Sources are relative to `model/`.", "",
-             "| key | value | description | source |", "|---|---|---|---|"]
-    lines += [f"| `{n['key']}` | {n['value']} | {n['description']} | `{n['source']}` |" for n in NUMBERS]
+             "Generated by `make_paper_assets.py` — regenerate, don't edit. Sources are relative to `model/`."]
+    for section in SECTIONS:
+        entries = [n for n in NUMBERS if n["section"] == section]
+        if not entries:
+            continue
+        lines += ["", f"## {section}", "", "| key | value | description | source |", "|---|---|---|---|"]
+        lines += [f"| `{n['key']}` | {n['value']} | {n['description'].replace('|', '/')} | `{n['source']}` |"
+                  for n in entries]
     (OUT / "numbers.md").write_text("\n".join(lines) + "\n")
 
 
@@ -422,6 +539,8 @@ def main():
     table_calibration()
     table_convergence(bench)
     table_prior_sensitivity()
+    table_insample_mape()
+    cite_quoted(bench)
     fig_zero_shot_heatmap(bench)
     fig_hw_share()
     fig_pit()

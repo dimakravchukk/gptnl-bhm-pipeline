@@ -108,6 +108,7 @@ class BHMPredictor:
         if self.stage.name != "hf":
             model_kwargs.pop("centered_slope", None)
         mcmc, idata = fit_mcmc(model, key, *args, y=y, **extra, **model_kwargs, **self.mcmc_kwargs)
+        self._fitted = (mcmc, idata, model, args, {**extra, **model_kwargs})
 
         names = self._post_vars()
         self.post = {v: flatten_posterior(idata, v) for v in names}
@@ -158,6 +159,28 @@ class BHMPredictor:
         else:
             a, d = p["alpha_c"][:, j], p["delta_corpus"][:, j, :]
         return a[:, None] + d[:, f]
+
+    def loo_pit(self, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
+        """(LOO-PIT, Pareto k) per training job, in training-row order.
+
+        PIT is computed on y = log(runtime/char); runtime is a monotone
+        transform of y per job, so the values equal the runtime-scale PIT.
+        Pareto k > 0.7 marks jobs where the PSIS-LOO approximation is unreliable.
+        """
+        from numpyro.infer import Predictive
+        import xarray as xr
+
+        mcmc, idata, model, args, kwargs = self._fitted
+        obs = Predictive(model, mcmc.get_samples())(jax.random.PRNGKey(seed), *args, **kwargs)["obs"]
+        C, D = idata.posterior.sizes["chain"], idata.posterior.sizes["draw"]
+        dim = idata.observed_data["obs"].dims[0]
+        idata = idata.copy()
+        idata.add_groups(posterior_predictive=xr.Dataset(
+            {"obs": (("chain", "draw", dim), np.asarray(obs).reshape(C, D, -1))},
+            coords={"chain": idata.posterior.chain, "draw": idata.posterior.draw}))
+        pit = az.loo_pit(idata, y="obs")
+        k = az.loo(idata, pointwise=True).pareto_k.values
+        return np.asarray(pit), np.asarray(k)
 
     def diagnostics(self) -> dict:
         return {"divergences": self.divergences, "rhat_max": self.rhat_max,

@@ -1,0 +1,11 @@
+held_out,scored_as,index,rt_mape,thesis_rt_mape
+cc_github_str_norm,am_stories_str_norm,0,1922.1796748757204,1833.0
+cc_github_str_norm,cc_openalex_str_norm,1,1162.2475177137953,1833.0
+cc_github_str_norm,kb_books_str_norm,2,1216.758662677773,1833.0
+cc_github_str_norm,naturalis_str_norm,3,1098.7646810886486,1833.0
+cc_github_str_norm,woogle_str_norm,4,748.5716644721872,1833.0
+cc_openalex_str_norm,am_stories_str_norm,0,63.398378495823366,20.0
+cc_openalex_str_norm,cc_github_str_norm,1,91.9140353560019,20.0
+cc_openalex_str_norm,kb_books_str_norm,2,10.659810524501736,20.0
+cc_openalex_str_norm,naturalis_str_norm,3,5.443449866965236,20.0
+cc_openalex_str_norm,woogle_str_norm,4,31.610501801123107,20.0
