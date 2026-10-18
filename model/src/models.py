@@ -4,6 +4,10 @@ Two models, one per pipeline stage:
   model_offset_hf                    — heuristic filtering
   model_offset_interaction_no_ntasks — string normalisation (production model)
 
+plus corpus-metadata variants (group-level predictors X_c on the corpus
+intercept, optionally the filtering slope) used for the cold-start benchmark:
+  model_offset_hf_meta, model_offset_interaction_no_ntasks_meta
+
 Both target log(runtime / total_chars). Fit them with fit_mcmc(), which
 returns both the raw MCMC object and an ArviZ InferenceData in one call —
 use load_and_validate_fit() when loading a previously-saved .nc file, to
@@ -36,10 +40,33 @@ MODEL_VARS = {
         "gamma0", "sigma_alpha", "z_alpha", "alpha_c",
         "delta_raw", "delta", "sigma_delta", "eta_z", "delta_corpus", "tau",
     },
+    "model_offset_hf_meta": {
+        "gamma0", "w_alpha", "sigma_alpha", "z", "alpha_c",
+        "beta_alpha", "sigma_beta", "zb", "beta_c", "tau",
+    },
+    "model_offset_interaction_no_ntasks_meta": {
+        "gamma0", "w_alpha", "sigma_alpha", "z_alpha", "alpha_c",
+        "delta_raw", "delta", "sigma_delta", "eta_z", "delta_corpus", "tau",
+    },
 }
 
 
-def model_offset_hf(c_idx, alpha_cfg, J, y=None):
+def _group_effect(name, z_name, loc, scale, J, centered):
+    """Corpus-level effect ~ N(loc, scale), J groups.
+
+    Non-centred (default, production fits): sample z ~ N(0, 1), effect = loc + scale*z.
+    Centred: sample the effect directly. Same posterior, different geometry —
+    centred mixes far better when every group is pinned down by its data
+    (tiny tau, many jobs per corpus), where the non-centred form leaves a
+    ridge between the population mean and the z's. Centred fits have no z site.
+    """
+    if centered:
+        return numpyro.sample(name, dist.Normal(loc, scale).expand([J]))
+    z = numpyro.sample(z_name, dist.Normal(0, 1).expand([J]))
+    return numpyro.deterministic(name, loc + scale * z)
+
+
+def model_offset_hf(c_idx, alpha_cfg, J, y=None, centered=False):
     """Heuristic filtering: partial-pooled corpus intercepts + varying slopes on alpha_cfg.
 
     Parameters
@@ -53,20 +80,18 @@ def model_offset_hf(c_idx, alpha_cfg, J, y=None):
 
     gamma0      = numpyro.sample("gamma0",      dist.Normal(-12.0, 5.0))
     sigma_alpha = numpyro.sample("sigma_alpha", dist.HalfNormal(1.0))
-    z           = numpyro.sample("z",           dist.Normal(0, 1).expand([J]))
-    alpha_c     = numpyro.deterministic("alpha_c", gamma0 + sigma_alpha * z)
+    alpha_c     = _group_effect("alpha_c", "z", gamma0, sigma_alpha, J, centered)
 
     beta_alpha  = numpyro.sample("beta_alpha",  dist.Normal(0.0, 1.0))
     sigma_beta  = numpyro.sample("sigma_beta",  dist.HalfNormal(0.5))
-    zb          = numpyro.sample("zb",          dist.Normal(0, 1).expand([J]))
-    beta_c      = numpyro.deterministic("beta_c", beta_alpha + sigma_beta * zb)
+    beta_c      = _group_effect("beta_c", "zb", beta_alpha, sigma_beta, J, centered)
 
     tau = numpyro.sample("tau", dist.HalfNormal(0.3))
     mu  = alpha_c[c_idx] + beta_c[c_idx] * alpha_cfg
     numpyro.sample("obs", dist.Normal(mu, tau), obs=y)
 
 
-def model_offset_interaction_no_ntasks(c_idx, form_idx, J, K, y=None):
+def model_offset_interaction_no_ntasks(c_idx, form_idx, J, K, y=None, gamma0_loc=-16.0, centered=False):
     """String normalisation: corpus intercepts + corpus×form interaction. No n_tasks term.
 
     beta_ntasks was approx 0 in every prior fit, so it was dropped. Predicted
@@ -80,14 +105,19 @@ def model_offset_interaction_no_ntasks(c_idx, form_idx, J, K, y=None):
     J        : int             — number of corpora
     K         : int            — number of normalisation forms (typically 3: NFC, NFD, NFKC)
     y        : (N,) float array — observed log(runtime/chars), omit for prior predictive
+    gamma0_loc : prior mean of gamma0 (production: -16; prior-sensitivity check: -14)
     """
     _validate_index_range(c_idx, J, "c_idx", "J")
     _validate_index_range(form_idx, K, "form_idx", "K")
 
-    gamma0      = numpyro.sample("gamma0",      dist.Normal(-16.0, 2.0))
+    gamma0      = numpyro.sample("gamma0",      dist.Normal(gamma0_loc, 2.0))
     sigma_alpha = numpyro.sample("sigma_alpha", dist.HalfNormal(1.0))
-    z_alpha     = numpyro.sample("z_alpha",     dist.Normal(jnp.zeros(J), jnp.ones(J)))
-    alpha_c     = numpyro.deterministic("alpha_c", gamma0 + sigma_alpha * z_alpha)
+    alpha_c     = _group_effect("alpha_c", "z_alpha", gamma0, sigma_alpha, J, centered)
+    _form_effects_and_likelihood(alpha_c, c_idx, form_idx, J, K, y)
+
+
+def _form_effects_and_likelihood(alpha_c, c_idx, form_idx, J, K, y):
+    """Shared tail of the string-normalisation models: form effects + likelihood."""
 
     # Population-level form effects — NFC is baseline (delta[0] = 0)
     delta_raw = numpyro.sample("delta_raw", dist.Normal(jnp.zeros(K - 1), 0.5 * jnp.ones(K - 1)))
@@ -102,6 +132,51 @@ def model_offset_interaction_no_ntasks(c_idx, form_idx, J, K, y=None):
     tau = numpyro.sample("tau", dist.HalfNormal(0.3))
     mu  = alpha_c[c_idx] + delta_corpus[c_idx, form_idx]
     numpyro.sample("obs", dist.Normal(mu, tau), obs=y)
+
+
+def model_offset_hf_meta(c_idx, alpha_cfg, J, X_c, y=None, meta_on_slope=False, centered=False):
+    """model_offset_hf with corpus metadata as group-level predictors:
+    alpha_c ~ N(gamma0 + X_c·w_alpha, sigma_alpha), w ~ N(0, 0.5); with
+    meta_on_slope also beta_c ~ N(beta_alpha + X_c·w_beta, sigma_beta).
+
+    X_c : (J, P) per-corpus features, standardised on the training corpora.
+    """
+    _validate_index_range(c_idx, J, "c_idx", "J")
+    P = X_c.shape[1]
+
+    gamma0      = numpyro.sample("gamma0",      dist.Normal(-12.0, 5.0))
+    w_alpha     = numpyro.sample("w_alpha",     dist.Normal(0.0, 0.5).expand([P]))
+    sigma_alpha = numpyro.sample("sigma_alpha", dist.HalfNormal(1.0))
+    alpha_c     = _group_effect("alpha_c", "z", gamma0 + X_c @ w_alpha, sigma_alpha, J, centered)
+
+    beta_alpha  = numpyro.sample("beta_alpha",  dist.Normal(0.0, 1.0))
+    sigma_beta  = numpyro.sample("sigma_beta",  dist.HalfNormal(0.5))
+    beta_mean   = beta_alpha
+    if meta_on_slope:
+        w_beta    = numpyro.sample("w_beta", dist.Normal(0.0, 0.5).expand([P]))
+        beta_mean = beta_alpha + X_c @ w_beta
+    beta_c      = _group_effect("beta_c", "zb", beta_mean, sigma_beta, J, centered)
+
+    tau = numpyro.sample("tau", dist.HalfNormal(0.3))
+    mu  = alpha_c[c_idx] + beta_c[c_idx] * alpha_cfg
+    numpyro.sample("obs", dist.Normal(mu, tau), obs=y)
+
+
+def model_offset_interaction_no_ntasks_meta(c_idx, form_idx, J, K, X_c, y=None, gamma0_loc=-16.0,
+                                            centered=False):
+    """model_offset_interaction_no_ntasks with corpus metadata on the intercept:
+    alpha_c ~ N(gamma0 + X_c·w_alpha, sigma_alpha), w ~ N(0, 0.5).
+
+    X_c : (J, P) per-corpus features, standardised on the training corpora.
+    """
+    _validate_index_range(c_idx, J, "c_idx", "J")
+    _validate_index_range(form_idx, K, "form_idx", "K")
+
+    gamma0      = numpyro.sample("gamma0",      dist.Normal(gamma0_loc, 2.0))
+    w_alpha     = numpyro.sample("w_alpha",     dist.Normal(0.0, 0.5).expand([X_c.shape[1]]))
+    sigma_alpha = numpyro.sample("sigma_alpha", dist.HalfNormal(1.0))
+    alpha_c     = _group_effect("alpha_c", "z_alpha", gamma0 + X_c @ w_alpha, sigma_alpha, J, centered)
+    _form_effects_and_likelihood(alpha_c, c_idx, form_idx, J, K, y)
 
 
 def _validate_index_range(idx_array, expected_max_exclusive, idx_name, max_name):

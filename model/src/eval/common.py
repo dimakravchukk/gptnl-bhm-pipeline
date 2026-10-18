@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Protocol
+from pathlib import Path
+from typing import Callable, Protocol
 
 import numpy as np
 import pandas as pd
@@ -114,23 +115,52 @@ def resolve_corpora(requested: list[str] | None, available: list[str]) -> list[s
     return out
 
 
-def load_meta(meta_csv: str | None, meta_cols: list[str] | None, corpora: list[str]) -> pd.DataFrame | None:
-    """Per-corpus metadata indexed by the dataset's corpus names.
+def experimental_corpora() -> list[str]:
+    """Union of corpus names across both stages' runtime data, with the
+    filtering stage's `_str_norm` suffix stripped (the 9 experimental corpora)."""
+    here = Path(__file__).resolve().parents[2]
+    names = set()
+    for st in STAGES.values():
+        names |= {c.removesuffix("_str_norm") for c in pd.read_csv(here / st.data_csv)[CORPUS].unique()}
+    return sorted(names)
 
-    Rows are matched on exact name, then with the `_str_norm` suffix
-    stripped, so one metadata file serves both stages.
+
+def load_meta(meta_csv: str, reference_corpora: list[str],
+              log: Callable[[str], None] = print) -> pd.DataFrame:
+    """All usable per-corpus metadata features, one row per reference corpus.
+
+    Accepts a wide file (a `corpus` column plus numeric feature columns) or
+    the long stats format (dataset, metric, n_docs, mean, std, ...), which is
+    pivoted to `{metric}_mean` / `{metric}_std` columns. Rows for corpora
+    outside reference_corpora are ignored; a feature missing or NaN for any
+    reference corpus is dropped (and logged), so every feature set is
+    defined on exactly the same corpora.
     """
-    if meta_csv is None:
-        return None
-    meta = pd.read_csv(meta_csv).set_index(CORPUS)
-    cols = meta_cols or [c for c in meta.columns if pd.api.types.is_numeric_dtype(meta[c])]
-    out = {}
-    for c in corpora:
-        key = c if c in meta.index else c.removesuffix("_str_norm")
-        if key not in meta.index:
-            raise ValueError(f"--meta has no row for corpus {c!r}")
-        out[c] = meta.loc[key, cols].astype(float)
-    return pd.DataFrame(out).T
+    raw = pd.read_csv(meta_csv)
+    if {"dataset", "metric"} <= set(raw.columns):
+        wide = raw.pivot(index="dataset", columns="metric", values=["mean", "std"])
+        wide.columns = [f"{metric}_{stat}" for stat, metric in wide.columns]
+        meta = wide[sorted(wide.columns)]
+    else:
+        meta = raw.set_index(CORPUS).select_dtypes("number")
+
+    absent = sorted(set(reference_corpora) - set(meta.index))
+    if absent:
+        raise ValueError(f"{meta_csv} has no rows for corpora {absent}")
+    meta = meta.loc[reference_corpora].astype(float)
+    incomplete = meta.columns[meta.isna().any()].tolist()
+    if incomplete:
+        log(f"metadata: dropped {len(incomplete)} features missing for some corpus: {incomplete}")
+    return meta.drop(columns=incomplete)
+
+
+def meta_for_stage(meta: pd.DataFrame, cols: list[str], stage_corpora: list[str]) -> pd.DataFrame:
+    """Select feature columns and re-index by the stage's corpus names
+    (cc_github -> cc_github_str_norm for filtering)."""
+    missing = sorted(set(cols) - set(meta.columns))
+    if missing:
+        raise ValueError(f"metadata features not available: {missing}")
+    return pd.DataFrame({c: meta.loc[c.removesuffix("_str_norm"), cols] for c in stage_corpora}).T
 
 
 # ── power model ──────────────────────────────────────────────────────────────

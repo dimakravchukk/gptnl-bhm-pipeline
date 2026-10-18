@@ -5,7 +5,7 @@ import pytest
 
 from baselines.zoo import build_baselines
 from eval.bhm import BHMPredictor
-from eval.common import STAGES, PowerModel
+from eval.common import STAGES, PowerModel, load_meta, meta_for_stage
 from eval.lodo import cell_mape, run_lodo, variance_shares
 
 FAST = dict(num_warmup=200, num_samples=200, num_chains=1)
@@ -92,3 +92,40 @@ def test_cell_mape_and_variance_shares():
     hw, add = variance_shares(R, P, R * P / 1000)
     assert hw == pytest.approx(0.5, abs=0.03)
     assert add == pytest.approx(1.0, abs=0.05)
+
+
+def test_load_meta_pivots_long_format_and_drops_incomplete(tmp_path):
+    rows = []
+    for ds in ["a", "b", "ignored"]:
+        rows.append({"dataset": ds, "metric": "length", "n_docs": 1, "mean": 10.0, "std": 2.0})
+        if ds != "b":  # 'lines' missing for a reference corpus -> dropped
+            rows.append({"dataset": ds, "metric": "lines", "n_docs": 1, "mean": 3.0, "std": 1.0})
+    path = tmp_path / "stats.csv"
+    pd.DataFrame(rows).to_csv(path, index=False)
+
+    meta = load_meta(str(path), ["a", "b"], log=lambda s: None)
+    assert list(meta.index) == ["a", "b"]
+    assert list(meta.columns) == ["length_mean", "length_std"]
+    staged = meta_for_stage(meta, ["length_mean"], ["a_str_norm", "b"])
+    assert list(staged.index) == ["a_str_norm", "b"]
+
+
+def test_build_baselines_meta_variants_and_selection(hf_df):
+    meta = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]}, index=["c0", "c1", "c2", "c3"])
+    names = set(build_baselines(STAGES["hf"], metas={"meta": meta, "meta_all": meta},
+                                only=["+meta", "+meta_all"]))
+    assert names == {f"{m}+{v}" for m in ["rf", "gbm", "gp", "mlp"] for v in ["meta", "meta_all"]}
+    assert set(build_baselines(STAGES["hf"], metas={"meta": meta}, only=["rf"])) == {"rf", "rf+meta"}
+
+
+@pytest.mark.parametrize("on_slope", [False, True])
+def test_bhm_meta_predicts_unseen_corpus(hf_df, on_slope):
+    # metadata perfectly tracks the corpus intercept used in the fixture
+    meta = pd.DataFrame({"x": [-12.0, -12.5, -13.0, -12.2]}, index=["c0", "c1", "c2", "c3"])
+    m = BHMPredictor(STAGES["hf"], meta=meta, meta_on_slope=on_slope, **FAST)
+    m.fit(hf_df[hf_df.corpus != "c3"])
+    assert m.name == ("bhm+meta_slope" if on_slope else "bhm+meta")
+    assert "w_alpha" in m.post and (("w_beta" in m.post) == on_slope)
+    test = hf_df[hf_df.corpus == "c3"].reset_index(drop=True)
+    y = m.predict(test, 200, np.random.default_rng(0))
+    assert y.shape == (200, len(test)) and np.isfinite(y).all()

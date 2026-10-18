@@ -173,20 +173,27 @@ def _ml_estimators(seed: int) -> dict:
 BASELINE_NAMES = ["complete_pooling", "no_pooling", "rf", "gbm", "gp", "mlp"]
 
 
-def build_baselines(stage: StageConfig, meta: pd.DataFrame | None = None,
+def selected(name: str, only: list[str] | None) -> bool:
+    """`only` entries match a full name ('rf+meta'), a base model ('rf' selects
+    rf and all its metadata variants), or a variant suffix ('+meta_all')."""
+    if only is None:
+        return True
+    base, _, variant = name.partition("+")
+    return name in only or base in only or (variant != "" and f"+{variant}" in only)
+
+
+def build_baselines(stage: StageConfig, metas: dict[str, pd.DataFrame] | None = None,
                     only: list[str] | None = None, seed: int = 0) -> dict:
-    """{name: zero-arg factory}. ML baselines appear without metadata and,
-    when `meta` is given, again as '<name>+meta'."""
-    wanted = lambda n: only is None or n in only or n.split("+")[0] in only
+    """{name: zero-arg factory}. ML baselines appear without metadata and once
+    per metadata variant as '<name>+<variant>' (e.g. 'rf+meta', 'rf+meta_all')."""
     factories = {}
-    if wanted("complete_pooling"):
+    if selected("complete_pooling", only):
         factories["complete_pooling"] = lambda: CompletePooling(stage)
-    if wanted("no_pooling"):
+    if selected("no_pooling", only):
         factories["no_pooling"] = lambda: NoPooling(stage)
     for name, est in _ml_estimators(seed).items():
-        if wanted(name):
-            factories[name] = lambda n=name, e=est: OffsetRegressor(n, e, stage, seed=seed)
-        if meta is not None and wanted(f"{name}+meta"):
-            factories[f"{name}+meta"] = (
-                lambda n=f"{name}+meta", e=est: OffsetRegressor(n, e, stage, meta=meta, seed=seed))
+        variants = {name: None} | {f"{name}+{v}": m for v, m in (metas or {}).items()}
+        for full, meta in variants.items():
+            if selected(full, only):
+                factories[full] = lambda n=full, e=est, m=meta: OffsetRegressor(n, e, stage, meta=m, seed=seed)
     return factories

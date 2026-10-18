@@ -23,7 +23,7 @@ import pandas as pd
 from energy import hdi_94
 
 from .common import (
-    ANCHORED, CORPUS, ENERGY, RUNTIME, ZERO_SHOT,
+    ANCHORED, CHARS, CORPUS, ENERGY, RUNTIME, ZERO_SHOT,
     PowerModel, Predictor, StageConfig, derive_runtime_energy,
 )
 
@@ -39,6 +39,15 @@ def coverage94(samples: np.ndarray, measured: np.ndarray) -> float:
     inside = [lo <= m <= hi for m, (lo, hi) in
               ((m, hdi_94(samples[:, j])) for j, m in enumerate(measured))]
     return float(np.mean(inside))
+
+
+def corpus_coverage94(R: np.ndarray, test_df: pd.DataFrame) -> float:
+    """1.0 if the corpus-level mean of log(runtime/char) over the test jobs lies
+    in the 94% HDI of its predictive distribution, else 0.0 (one event per fold)."""
+    chars = test_df[CHARS].to_numpy(float)
+    pred = np.log(R / chars[None, :]).mean(axis=1)
+    lo, hi = hdi_94(pred)
+    return float(lo <= np.log(test_df[RUNTIME].to_numpy(float) / chars).mean() <= hi)
 
 
 def variance_shares(R: np.ndarray, P: np.ndarray, E: np.ndarray) -> tuple[float, float]:
@@ -61,6 +70,7 @@ def compute_metrics(test_df: pd.DataFrame, R, P, E, stage: StageConfig) -> dict:
         "rt_mape":      cell_mape(np.median(R, 0), rt_meas, cells),
         "rt_mape_mean": cell_mape(R.mean(0), rt_meas, cells),
         "rt_cov94":     coverage94(R, rt_meas),
+        "corpus_cov94": corpus_coverage94(R, test_df),
     }
     has_e = test_df[ENERGY].notna().to_numpy()
     if has_e.any():
