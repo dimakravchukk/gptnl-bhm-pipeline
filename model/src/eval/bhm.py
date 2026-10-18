@@ -28,11 +28,13 @@ from models import (
 from .common import ALPHA, CORPUS, FORM_IDX, NORM_FORMS, TARGET, StageConfig
 
 # The one sampler setting used for every benchmark, in-sample and sensitivity fit.
-# Centred corpus effects: the non-centred production parameterisation left a
+# Centred corpus intercepts: the non-centred production parameterisation left a
 # gamma0 <-> z ridge (R-hat up to 2) because tau is tiny and every corpus is
-# pinned by its data; centred gives 0 divergences and R-hat < 1.01 on every fold.
+# pinned by its data. Filtering slopes stay non-centred: they are weakly
+# identified, and centring them made a sigma_beta funnel (178 divergences in
+# one bhm+meta_slope fold). centered_slope is ignored by the normalisation stage.
 SAMPLER = dict(num_warmup=4000, num_samples=2000, num_chains=4, target_accept_prob=0.99)
-MODEL_KWARGS = {"centered": True}
+MODEL_KWARGS = {"centered": True, "centered_slope": False}
 
 
 class BHMPredictor:
@@ -102,7 +104,10 @@ class BHMPredictor:
             self.x_mean, self.x_std = train_meta.mean(), train_meta.std(ddof=0)
             args.append(self._standardised(self.corpora))
 
-        mcmc, idata = fit_mcmc(model, key, *args, y=y, **extra, **self.model_kwargs, **self.mcmc_kwargs)
+        model_kwargs = dict(self.model_kwargs)
+        if self.stage.name != "hf":
+            model_kwargs.pop("centered_slope", None)
+        mcmc, idata = fit_mcmc(model, key, *args, y=y, **extra, **model_kwargs, **self.mcmc_kwargs)
 
         names = self._post_vars()
         self.post = {v: flatten_posterior(idata, v) for v in names}

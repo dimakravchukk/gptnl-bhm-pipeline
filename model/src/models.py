@@ -56,6 +56,7 @@ def _group_effect(name, z_name, loc, scale, J, centered):
 
     Non-centred (default, production fits): sample z ~ N(0, 1), effect = loc + scale*z.
     Centred: sample the effect directly. Same posterior, different geometry —
+    (the filtering models take centered_slope separately; default: same as centered)
     centred mixes far better when every group is pinned down by its data
     (tiny tau, many jobs per corpus), where the non-centred form leaves a
     ridge between the population mean and the z's. Centred fits have no z site.
@@ -66,7 +67,7 @@ def _group_effect(name, z_name, loc, scale, J, centered):
     return numpyro.deterministic(name, loc + scale * z)
 
 
-def model_offset_hf(c_idx, alpha_cfg, J, y=None, centered=False):
+def model_offset_hf(c_idx, alpha_cfg, J, y=None, centered=False, centered_slope=None):
     """Heuristic filtering: partial-pooled corpus intercepts + varying slopes on alpha_cfg.
 
     Parameters
@@ -84,7 +85,8 @@ def model_offset_hf(c_idx, alpha_cfg, J, y=None, centered=False):
 
     beta_alpha  = numpyro.sample("beta_alpha",  dist.Normal(0.0, 1.0))
     sigma_beta  = numpyro.sample("sigma_beta",  dist.HalfNormal(0.5))
-    beta_c      = _group_effect("beta_c", "zb", beta_alpha, sigma_beta, J, centered)
+    beta_c      = _group_effect("beta_c", "zb", beta_alpha, sigma_beta, J,
+                                centered if centered_slope is None else centered_slope)
 
     tau = numpyro.sample("tau", dist.HalfNormal(0.3))
     mu  = alpha_c[c_idx] + beta_c[c_idx] * alpha_cfg
@@ -134,7 +136,8 @@ def _form_effects_and_likelihood(alpha_c, c_idx, form_idx, J, K, y):
     numpyro.sample("obs", dist.Normal(mu, tau), obs=y)
 
 
-def model_offset_hf_meta(c_idx, alpha_cfg, J, X_c, y=None, meta_on_slope=False, centered=False):
+def model_offset_hf_meta(c_idx, alpha_cfg, J, X_c, y=None, meta_on_slope=False, centered=False,
+                         centered_slope=None):
     """model_offset_hf with corpus metadata as group-level predictors:
     alpha_c ~ N(gamma0 + X_c·w_alpha, sigma_alpha), w ~ N(0, 0.5); with
     meta_on_slope also beta_c ~ N(beta_alpha + X_c·w_beta, sigma_beta).
@@ -155,7 +158,8 @@ def model_offset_hf_meta(c_idx, alpha_cfg, J, X_c, y=None, meta_on_slope=False, 
     if meta_on_slope:
         w_beta    = numpyro.sample("w_beta", dist.Normal(0.0, 0.5).expand([P]))
         beta_mean = beta_alpha + X_c @ w_beta
-    beta_c      = _group_effect("beta_c", "zb", beta_mean, sigma_beta, J, centered)
+    beta_c      = _group_effect("beta_c", "zb", beta_mean, sigma_beta, J,
+                                centered if centered_slope is None else centered_slope)
 
     tau = numpyro.sample("tau", dist.HalfNormal(0.3))
     mu  = alpha_c[c_idx] + beta_c[c_idx] * alpha_cfg

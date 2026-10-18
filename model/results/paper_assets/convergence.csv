@@ -1,0 +1,37 @@
+corpus,stage,model,divergences,R-hat max
+am_stories,Heuristic filtering,BHM,0,1.0019
+am_stories,Heuristic filtering,BHM + meta,0,1.0015
+am_stories,Heuristic filtering,BHM + meta (int.+slope),2,1.0023
+cc_github,Heuristic filtering,BHM,0,1.0017
+cc_github,Heuristic filtering,BHM + meta,0,1.0011
+cc_github,Heuristic filtering,BHM + meta (int.+slope),0,1.0012
+cc_openalex,Heuristic filtering,BHM,0,1.0017
+cc_openalex,Heuristic filtering,BHM + meta,0,1.001
+cc_openalex,Heuristic filtering,BHM + meta (int.+slope),0,1.0029
+kb_books,Heuristic filtering,BHM,0,1.002
+kb_books,Heuristic filtering,BHM + meta,0,1.0015
+kb_books,Heuristic filtering,BHM + meta (int.+slope),0,1.0023
+naturalis,Heuristic filtering,BHM,0,1.0037
+naturalis,Heuristic filtering,BHM + meta,0,1.0012
+naturalis,Heuristic filtering,BHM + meta (int.+slope),0,1.0016
+woogle,Heuristic filtering,BHM,0,1.0019
+woogle,Heuristic filtering,BHM + meta,0,1.0023
+woogle,Heuristic filtering,BHM + meta (int.+slope),0,1.0014
+am_stories,String normalisation,BHM,0,1.0021
+am_stories,String normalisation,BHM + meta,0,1.0061
+cc_github,String normalisation,BHM,0,1.0029
+cc_github,String normalisation,BHM + meta,0,1.0019
+cc_openalex,String normalisation,BHM,0,1.0027
+cc_openalex,String normalisation,BHM + meta,0,1.0035
+eu_parliament,String normalisation,BHM,0,1.0026
+eu_parliament,String normalisation,BHM + meta,0,1.0028
+kb_books,String normalisation,BHM,0,1.0041
+kb_books,String normalisation,BHM + meta,0,1.0029
+naturalis,String normalisation,BHM,0,1.0016
+naturalis,String normalisation,BHM + meta,0,1.0022
+rechtspraak,String normalisation,BHM,0,1.0023
+rechtspraak,String normalisation,BHM + meta,0,1.0026
+tweedekamer,String normalisation,BHM,0,1.002
+tweedekamer,String normalisation,BHM + meta,0,1.0033
+woogle,String normalisation,BHM,0,1.0018
+woogle,String normalisation,BHM + meta,0,1.0031

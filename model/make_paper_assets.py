@@ -99,9 +99,9 @@ def write_table(df: pd.DataFrame, name: str, caption: str, notes: str = "",
         " & ".join(tex_escape(c) for c in cols) + " \\\\", "\\midrule",
     ]
     prev = None
-    for idx, row in show.iterrows():
+    groups = df[group_col].tolist() if group_col else [None] * len(show)
+    for (idx, row), g in zip(show.iterrows(), groups):
         if group_col:
-            g = df.at[idx, group_col]
             if g != prev:
                 if prev is not None:
                     lines.append("\\midrule")
