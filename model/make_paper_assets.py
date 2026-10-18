@@ -230,7 +230,9 @@ def table_convergence(bench: dict[str, pd.DataFrame]) -> None:
         for _, r in bhm.iterrows():
             rows.append({"stage": st, "model": r["model"], "corpus": r["corpus"],
                          "divergences": int(r["divergences"]), "R-hat max": round(r["rhat_max"], 4)})
-        settings = {k.removeprefix("mcmc_"): bhm[k].iloc[0] for k in bhm.columns if k.startswith("mcmc_")}
+        settings = {k.removeprefix("mcmc_").removeprefix("prior_"): bhm[k].dropna().iloc[0]
+                    for k in bhm.columns if k.startswith(("mcmc_", "prior_")) and bhm[k].notna().any()}
+        settings = {k: (int(v) if isinstance(v, float) and v.is_integer() else v) for k, v in settings.items()}
         cite(f"conv.{st}.divergences_total", int(bhm["divergences"].sum()),
              f"{STAGE_LABEL[st]}: total divergent transitions over all BHM zero-shot fits",
              f"results/benchmark_{st}.csv (model=bhm*, sum of divergences)", fmt="{:d}")
