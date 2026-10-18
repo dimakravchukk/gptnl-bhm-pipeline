@@ -134,8 +134,10 @@ def test_predict_energy_str_norm_nfc_baseline_zero_offset(fake_str_norm_posterio
         alpha_c_post, delta_corpus_post, corpus_idx=0, form_idx=0,
         total_chars=1e9, p_task_mixture=fake_mixture, rng=np.random.default_rng(1),
     )
-    assert samples_nfc.shape == (500,)
-    assert (samples_nfc > 0).all()
+    assert samples_nfc["E_samples"].shape == (500,)
+    assert (samples_nfc["E_samples"] > 0).all()
+    # NFC is the baseline form: runtime depends on alpha_c alone
+    np.testing.assert_allclose(samples_nfc["rt_samples"], np.exp(alpha_c_post[:, 0]) * 1e9, rtol=1e-6)
 
 def test_run_energy_mc_str_norm_skips_unknown_pairs(fake_str_norm_posterior, fake_mixture, capsys):
     alpha_c_post, delta_corpus_post = fake_str_norm_posterior
