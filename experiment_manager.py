@@ -9,6 +9,7 @@ Usage:
     python experiment_manager.py generate --config default     # Selective generate
     python experiment_manager.py submit EXP_ID                 # Submit one experiment
     python experiment_manager.py submit --config default --dry-run
+    python experiment_manager.py generate --grid probe_sn_size_sweep   # One grid from grids.yaml
     python experiment_manager.py submit --config default --no-monitor  # Skip EAR DB monitor
     python experiment_manager.py status                        # Show experiment table
 
@@ -73,11 +74,11 @@ def _meta_index(rows: list[dict]) -> dict[str, dict]:
 # === FILTER HELPERS ===
 
 def _filter_exps(exps: list[dict], args: list[str]) -> list[dict]:
-    """Filter experiment list by --stage, --dataset, --config, --n_tasks flags."""
+    """Filter experiment list by --grid, --stage, --dataset, --config, --n_tasks flags."""
     filters = {}
     i = 0
     while i < len(args):
-        if args[i] in ("--stage", "--dataset", "--config", "--n_tasks"):
+        if args[i] in ("--grid", "--stage", "--dataset", "--config", "--n_tasks"):
             filters[args[i].lstrip("-")] = args[i + 1]
             i += 2
         else:

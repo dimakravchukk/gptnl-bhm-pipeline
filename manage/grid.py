@@ -171,10 +171,13 @@ def expand_grid(spec: dict = None) -> list[dict]:
 
 
 def expand_all_grids() -> list[dict]:
-    """Return experiments from every grid in grids.yaml."""
+    """Return experiments from every grid in grids.yaml, each tagged with its
+    grid name under "grid"."""
     result = []
-    for spec in ALL_GRIDS:
-        result.extend(expand_grid(spec))
+    for name, spec in _GRIDS.items():
+        for exp in expand_grid(spec):
+            exp["grid"] = name
+            result.append(exp)
     return result
 
 
