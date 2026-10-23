@@ -1,0 +1,68 @@
+# Snellius config: the original stage inputs, the same folders the
+# full-scale runs read (manage/datasets.yaml).
+#   string_normalization reads the raw datasets;
+#   heuristic_filtering reads the string_normalization outputs.
+# full_corpus_chars: sum of datatrove's reader doc_len over the full-scale
+# run (total_chars in model/results/df_train_str_norm.csv / df_train_hf.csv).
+# The script warns if its own scan differs from these by more than 0.5%.
+
+master_seed: 20261022
+n_workers: 8
+size_fractions: [0.001, 0.004, 0.016, 0.064]
+oversample: 1.5
+max_ratio: 1.10
+min_docs_per_worker: 4
+text_column: text
+id_column: id
+glob: "**/*.parquet"
+output_root: /projects/0/prjs0986/energy_studies/shared/probes
+
+inputs:
+  string_normalization:
+    am_stories:
+      path: /projects/0/prjs0986/energy_studies/datasets/american-stories
+      full_corpus_chars: 8050397857
+    cc_github:
+      path: /projects/0/prjs0986/energy_studies/datasets/cc_github_opencode
+      full_corpus_chars: 8753497716
+    cc_openalex:
+      path: /projects/0/prjs0986/energy_studies/datasets/cc_openalex
+      full_corpus_chars: 11710194484
+    eu_parliament:
+      path: /projects/0/prjs0986/energy_studies/shared/eu_parliament_32files
+      full_corpus_chars: 950462068
+    kb_books:
+      path: /projects/0/prjs0986/energy_studies/datasets/kb-pd-books
+      full_corpus_chars: 1710853338
+    naturalis:
+      path: /projects/0/prjs0986/energy_studies/datasets/naturalis
+      full_corpus_chars: 892620679
+    rechtspraak:
+      path: /projects/0/prjs0986/energy_studies/datasets/rechtspraak
+      full_corpus_chars: 13379993898
+    tweedekamer:
+      path: /projects/0/prjs0986/energy_studies/datasets/tweedekamer
+      full_corpus_chars: 7781135241
+    woogle:
+      path: /projects/0/prjs0986/energy_studies/datasets/woogle
+      full_corpus_chars: 11963010913
+  heuristic_filtering:
+    # am_stories: the 32-task output; the 16-task one holds only 4.68e9 chars.
+    am_stories:
+      path: /gpfs/home5/dkravchuk/experiments/string_normalization/am_stories/default__32t_8tpj_128c__r1/output
+      full_corpus_chars: 8049381336
+    cc_github:
+      path: /gpfs/home5/dkravchuk/experiments/string_normalization/cc_github/default__32t_8tpj_128c__r1/output
+      full_corpus_chars: 8751115989
+    cc_openalex:
+      path: /gpfs/home5/dkravchuk/experiments/string_normalization/cc_openalex/default__16t_4tpj_64c__r1/output
+      full_corpus_chars: 11712232836
+    kb_books:
+      path: /gpfs/home5/dkravchuk/experiments/string_normalization/kb_books/default__8t_8tpj_128c__r1/output
+      full_corpus_chars: 1710706144
+    naturalis:
+      path: /gpfs/home5/dkravchuk/experiments/string_normalization/naturalis/default__8t_8tpj_128c__r1/output
+      full_corpus_chars: 894786578
+    woogle:
+      path: /gpfs/home5/dkravchuk/experiments/string_normalization/woogle/default__32t_8tpj_128c__r1/output
+      full_corpus_chars: 11922989849

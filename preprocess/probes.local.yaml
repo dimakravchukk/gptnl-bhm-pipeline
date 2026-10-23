@@ -1,0 +1,34 @@
+# Local development config: both stages read the mock GPT-NL data
+# (mock_data/make_mock_data.py). This is post-curation data, so the probes
+# are only for building and testing the preprocessor, not for measurements.
+# full_corpus_chars is omitted: it is then taken from the scan of the inputs.
+
+master_seed: 20261022
+n_workers: 8
+size_fractions: [0.001, 0.004, 0.016, 0.064]
+oversample: 1.5            # p = min(1, oversample * largest fraction)
+max_ratio: 1.10
+min_docs_per_worker: 4
+text_column: text          # default; override per corpus with text_column:
+id_column: id
+glob: "**/*.parquet"
+output_root: probes        # relative to this file
+
+inputs:
+  string_normalization:
+    am_stories:    {path: ../mock_data/american-stories}
+    cc_github:     {path: ../mock_data/cc_github_open_source}
+    cc_openalex:   {path: ../mock_data/cc_openalex}
+    eu_parliament: {path: ../mock_data/european-parliament}
+    kb_books:      {path: ../mock_data/kb-pd-books}
+    naturalis:     {path: ../mock_data/naturalis}
+    rechtspraak:   {path: ../mock_data/rechtspraak}
+    tweedekamer:   {path: ../mock_data/tweedekamer}
+    woogle:        {path: ../mock_data/woogle}
+  heuristic_filtering:
+    am_stories:    {path: ../mock_data/american-stories}
+    cc_github:     {path: ../mock_data/cc_github_open_source}
+    cc_openalex:   {path: ../mock_data/cc_openalex}
+    kb_books:      {path: ../mock_data/kb-pd-books}
+    naturalis:     {path: ../mock_data/naturalis}
+    woogle:        {path: ../mock_data/woogle}

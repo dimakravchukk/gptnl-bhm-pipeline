@@ -24,3 +24,7 @@ Thumbs.db
 experiments/
 metadata.csv
 *.log
+# Local mock corpus data (regenerate with mock_data/make_mock_data.py)
+mock_data/*/
+mock_data/.raw/
+preprocess/probes/

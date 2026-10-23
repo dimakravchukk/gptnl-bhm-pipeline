@@ -1,0 +1,263 @@
+[
+  {
+    "short_name": "am_stories",
+    "hf_dir": "american-stories",
+    "source_file": "american-stories/american-stories_0001.parquet",
+    "columns": [
+      "id",
+      "dataset_name",
+      "source",
+      "title",
+      "language",
+      "license",
+      "language_score",
+      "dataset_url",
+      "avg_word_length",
+      "n_non_symbol_words",
+      "author",
+      "n_char",
+      "text"
+    ],
+    "text_column": "text",
+    "n_docs": 33725,
+    "total_chars": 50000693,
+    "mean_chars": 1482.6002372127502,
+    "max_chars": 7552,
+    "n_char_matches_len_text": 22,
+    "dataset_name_values": [
+      "American-stories"
+    ]
+  },
+  {
+    "short_name": "cc_github",
+    "hf_dir": "cc_github_open_source",
+    "source_file": "cc_github_open_source/cc_github_open_source_0001.parquet",
+    "columns": [
+      "language",
+      "avg_word_length",
+      "id",
+      "author",
+      "n_char",
+      "source",
+      "license",
+      "title",
+      "language_score",
+      "dataset_url",
+      "dataset_name",
+      "text",
+      "n_non_symbol_words"
+    ],
+    "text_column": "text",
+    "n_docs": 12045,
+    "total_chars": 50014904,
+    "mean_chars": 4152.337401411374,
+    "max_chars": 346327,
+    "n_char_matches_len_text": 0,
+    "dataset_name_values": [
+      "CC-Github Code"
+    ]
+  },
+  {
+    "short_name": "cc_openalex",
+    "hf_dir": "cc_openalex",
+    "source_file": "cc_openalex/cc_openalex_0001.parquet",
+    "columns": [
+      "license",
+      "source",
+      "title",
+      "n_char",
+      "language",
+      "author",
+      "language_score",
+      "avg_word_length",
+      "dataset_name",
+      "n_non_symbol_words",
+      "text",
+      "dataset_url",
+      "id"
+    ],
+    "text_column": "text",
+    "n_docs": 966,
+    "total_chars": 50011759,
+    "mean_chars": 51772.00724637681,
+    "max_chars": 304911,
+    "n_char_matches_len_text": 0,
+    "dataset_name_values": [
+      "CC-German-PD"
+    ]
+  },
+  {
+    "short_name": "eu_parliament",
+    "hf_dir": "european-parliament",
+    "source_file": "european-parliament/european-parliament_0001.parquet",
+    "columns": [
+      "source",
+      "text",
+      "author",
+      "id",
+      "avg_word_length",
+      "license",
+      "dataset_name",
+      "language_score",
+      "n_char",
+      "title",
+      "dataset_url",
+      "n_non_symbol_words",
+      "language"
+    ],
+    "text_column": "text",
+    "n_docs": 256,
+    "total_chars": 93043066,
+    "mean_chars": 363449.4765625,
+    "max_chars": 868323,
+    "n_char_matches_len_text": 0,
+    "dataset_name_values": [
+      "European Parliament"
+    ]
+  },
+  {
+    "short_name": "kb_books",
+    "hf_dir": "kb-pd-books",
+    "source_file": "kb-pd-books/kb-pd-books_0001.parquet",
+    "columns": [
+      "avg_word_length",
+      "id",
+      "dataset_name",
+      "language",
+      "n_non_symbol_words",
+      "dataset_url",
+      "author",
+      "source",
+      "n_char",
+      "language_score",
+      "license",
+      "text",
+      "title"
+    ],
+    "text_column": "text",
+    "n_docs": 156,
+    "total_chars": 144422046,
+    "mean_chars": 925782.3461538461,
+    "max_chars": 3760830,
+    "n_char_matches_len_text": 0,
+    "dataset_name_values": [
+      "Koninklijke Bibliotheek"
+    ]
+  },
+  {
+    "short_name": "naturalis",
+    "hf_dir": "naturalis",
+    "source_file": "naturalis/naturalis_0001.parquet",
+    "columns": [
+      "id",
+      "source",
+      "dataset_url",
+      "language_score",
+      "n_non_symbol_words",
+      "title",
+      "text",
+      "n_char",
+      "author",
+      "language",
+      "avg_word_length",
+      "license",
+      "dataset_name"
+    ],
+    "text_column": "text",
+    "n_docs": 1032,
+    "total_chars": 50030172,
+    "mean_chars": 48478.848837209305,
+    "max_chars": 1247820,
+    "n_char_matches_len_text": 0,
+    "dataset_name_values": [
+      "Naturalis"
+    ]
+  },
+  {
+    "short_name": "rechtspraak",
+    "hf_dir": "rechtspraak",
+    "source_file": "rechtspraak/rechtspraak_0001.parquet",
+    "columns": [
+      "license",
+      "author",
+      "title",
+      "id",
+      "n_char",
+      "dataset_name",
+      "dataset_url",
+      "language_score",
+      "text",
+      "n_non_symbol_words",
+      "source",
+      "language",
+      "avg_word_length"
+    ],
+    "text_column": "text",
+    "n_docs": 4009,
+    "total_chars": 50014263,
+    "mean_chars": 12475.495884260414,
+    "max_chars": 346679,
+    "n_char_matches_len_text": 0,
+    "dataset_name_values": [
+      "De Rechtspraak"
+    ]
+  },
+  {
+    "short_name": "tweedekamer",
+    "hf_dir": "tweedekamer",
+    "source_file": "tweedekamer/tweedekamer_0001.parquet",
+    "columns": [
+      "dataset_name",
+      "n_char",
+      "text",
+      "license",
+      "source",
+      "language",
+      "n_non_symbol_words",
+      "dataset_url",
+      "language_score",
+      "author",
+      "avg_word_length",
+      "id",
+      "title"
+    ],
+    "text_column": "text",
+    "n_docs": 1656,
+    "total_chars": 50106921,
+    "mean_chars": 30257.802536231884,
+    "max_chars": 5898669,
+    "n_char_matches_len_text": 0,
+    "dataset_name_values": [
+      "Tweede Kamer"
+    ]
+  },
+  {
+    "short_name": "woogle",
+    "hf_dir": "woogle",
+    "source_file": "woogle/woogle_0001.parquet",
+    "columns": [
+      "id",
+      "language_score",
+      "title",
+      "n_char",
+      "avg_word_length",
+      "author",
+      "source",
+      "text",
+      "license",
+      "dataset_name",
+      "language",
+      "n_non_symbol_words",
+      "dataset_url"
+    ],
+    "text_column": "text",
+    "n_docs": 21049,
+    "total_chars": 50000608,
+    "mean_chars": 2375.438643165946,
+    "max_chars": 62353,
+    "n_char_matches_len_text": 0,
+    "dataset_name_values": [
+      "Woogle"
+    ]
+  }
+]

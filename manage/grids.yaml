@@ -418,3 +418,80 @@ anchor_str_norm_forms:
   partition: rome
   time: "02:00:00"
   limit: 1000
+
+# ── Anchoring probes (preprocess/make_probes.py) ───────────────────────────────
+# One job = one corpus x one config x one probe size; 8 shards -> 8 tasks,
+# one shard per rank. datasets are corpus short names; each is expanded to
+# <corpus>_probe<per mille> with input_folder
+# <probe_root>/<stage>/<corpus>/size_<frac>/data. Probes marked infeasible in
+# <probe_root>/summary.csv are skipped.
+#   Arm 1: size sweep at the central config (ro_alpha065 / NFC).
+#   Arm 2: the remaining configs at size 0.016.
+
+probe_hf_size_sweep:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: [ro_alpha065]
+  datasets: [am_stories, cc_github, cc_openalex, kb_books, naturalis, woogle]
+  probe_sizes: [0.001, 0.004, 0.016, 0.064]
+  probe_root: /projects/0/prjs0986/energy_studies/shared/probes
+  n_tasks: [8]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+probe_hf_configs:
+  stage: heuristic_filtering
+  configs_group: ro_alpha_sweep
+  configs: [ro_alpha060, ro_alpha075, ro_alpha080]
+  datasets: [am_stories, cc_github, cc_openalex, kb_books, naturalis, woogle]
+  probe_sizes: [0.016]
+  probe_root: /projects/0/prjs0986/energy_studies/shared/probes
+  n_tasks: [8]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+probe_sn_size_sweep:
+  stage: string_normalization
+  configs_group: main
+  configs: [NFC]
+  datasets: [am_stories, cc_github, cc_openalex, eu_parliament, kb_books, naturalis, rechtspraak, tweedekamer, woogle]
+  probe_sizes: [0.001, 0.004, 0.016, 0.064]
+  probe_root: /projects/0/prjs0986/energy_studies/shared/probes
+  n_tasks: [8]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "02:00:00"
+  limit: -1
+
+probe_sn_configs:
+  stage: string_normalization
+  configs_group: main
+  configs: [NFD, NFKC]
+  datasets: [am_stories, cc_github, cc_openalex, eu_parliament, kb_books, naturalis, rechtspraak, tweedekamer, woogle]
+  probe_sizes: [0.016]
+  probe_root: /projects/0/prjs0986/energy_studies/shared/probes
+  n_tasks: [8]
+  cpus_per_task: [128]
+  tasks_per_job: 8
+  parallel_tasks_per_job: true
+  hpc_mem_per_cpu_gb: 1
+  replicates: 1
+  partition: rome
+  time: "02:00:00"
+  limit: -1

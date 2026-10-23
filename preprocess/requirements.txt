@@ -1,0 +1,6 @@
+# preprocess/ and mock_data/ (probe builder). Install: pip install -r preprocess/requirements.txt
+numpy
+pyarrow>=14
+PyYAML
+pytest
+huggingface_hub  # only for mock_data/make_mock_data.py
