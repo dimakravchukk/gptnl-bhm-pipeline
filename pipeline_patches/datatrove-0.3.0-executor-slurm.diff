@@ -1,0 +1,67 @@
+--- pipeline_patches/slurm_orig_0.3.0.py	2026-10-23 18:55:45
++++ pipeline_patches/datatrove-0.3.0-executor-slurm.py	2026-10-23 18:55:45
+@@ -79,6 +79,10 @@
+         mail_user: email address to send notifications to
+         requeue: requeue the job if it fails
+         tasks_per_job: each slurm job in the job array will run these many datatrove tasks. This reduces the total nb of slurm jobs launched.
++        parallel_tasks_per_job: run the tasks_per_job tasks of a job in parallel, one per
++            `srun --ntasks=tasks_per_job` process (each gets cpus_per_task // tasks_per_job cpus),
++            instead of sequentially in a single process. [local patch]
++        tasks_per_node: if set, passed to sbatch as --ntasks-per-node. [local patch]
+     """
+ 
+     def __init__(
+@@ -112,6 +116,8 @@
+         requeue: bool = True,
+         srun_args: dict = None,
+         tasks_per_job: int = 1,
++        parallel_tasks_per_job: bool = False,
++        tasks_per_node: int | None = None,
+     ):
+         super().__init__(pipeline, logging_dir, skip_completed, randomize_start_duration)
+         self.tasks = tasks
+@@ -120,6 +126,8 @@
+         self.cpus_per_task = cpus_per_task
+         self.mem_per_cpu_gb = mem_per_cpu_gb
+         self.tasks_per_job = tasks_per_job
++        self.parallel_tasks_per_job = parallel_tasks_per_job
++        self.tasks_per_node = tasks_per_node
+         self.time = time
+         self.job_name = job_name
+         self.qos = qos
+@@ -164,6 +172,10 @@
+                 os.environ.get("RUN_OFFSET", 0)
+             )
+             ranks_to_run_range = (slurm_rank * self.tasks_per_job, (slurm_rank + 1) * self.tasks_per_job)
++            if self.parallel_tasks_per_job:
++                # one srun process per rank of this array element
++                first = ranks_to_run_range[0] + int(os.environ.get("SLURM_PROCID", 0))
++                ranks_to_run_range = (first, first + 1)
+             with self.logging_dir.open("ranks_to_run.json", "r") as ranks_to_run_file:
+                 all_ranks = json.load(ranks_to_run_file)
+             if ranks_to_run_range[0] >= len(all_ranks):
+@@ -255,9 +267,14 @@
+ 
+         # create the actual sbatch script
+         srun_args_str = " ".join([f"--{k}={v}" for k, v in self.srun_args.items()]) if self.srun_args else ""
++        parallel_args = (
++            f"--ntasks={self.tasks_per_job} --cpus-per-task={self.cpus_per_task // self.tasks_per_job} --exclusive "
++            if self.parallel_tasks_per_job
++            else ""
++        )
+         launch_file_contents = self.get_launch_file_contents(
+             self.get_sbatch_args(max_array),
+-            f"srun {srun_args_str} -l launch_pickled_pipeline {self.logging_dir.resolve_paths('executor.pik')}",
++            f"srun {srun_args_str} {parallel_args}-l launch_pickled_pipeline {self.logging_dir.resolve_paths('executor.pik')}",
+         )
+         # save it
+         with self.logging_dir.open("launch_script.slurm", "w") as launchscript_f:
+@@ -304,6 +321,8 @@
+             **({"mail-type": self.mail_type, "mail-user": self.mail_user} if self.mail_user else {}),
+             **self._sbatch_args,
+         }
++        if self.tasks_per_node:
++            sbatch_args["ntasks-per-node"] = self.tasks_per_node
+         if self.requeue:
+             sbatch_args["requeue"] = ""
+         if self.qos:
