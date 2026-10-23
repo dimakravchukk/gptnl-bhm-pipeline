@@ -375,6 +375,9 @@ def build(job: Job, s: Settings, dry_run: bool = False) -> list[dict]:
     compression = source_compression(files[0])
     rows, pos_map = gather_rows(files, cand, union, schema)
     commit, stamp = git_hash(), datetime.now(timezone.utc).isoformat()
+    rel_files = [f.relative_to(job.input_root).as_posix() for f in files]
+    key = lambda q: f"{rel_files[cand.file_idx[q]]}:{cand.row_idx[q]}"
+    ids_unique = len(set(cand.ids)) == len(cand.ids)
 
     for row, (nonempty, shards, shard_chars) in to_write:
         d = probe_dir(s.output_root, job.stage, job.corpus, row["size_frac"])
@@ -385,7 +388,8 @@ def build(job: Job, s: Settings, dry_run: bool = False) -> list[dict]:
             take = pa.array([pos_map[int(nonempty[i])] for i in sh], type=pa.int64())
             pq.write_table(rows.take(take), d / "data" / name, compression=compression)
             shard_info.append({"file": f"data/{name}", "n_docs": len(sh), "chars": shard_chars[w],
-                               "doc_ids": [cand.ids[int(nonempty[i])] for i in sh]})
+                               "doc_ids": [cand.ids[int(nonempty[i])] for i in sh],
+                               "doc_keys": [key(int(nonempty[i])) for i in sh]})
         manifest = {
             **{k: row[k] for k in ("corpus", "stage", "size_frac", "seed", "target_chars",
                                    "actual_chars", "full_corpus_chars", "cost_frac", "ratio",
@@ -396,9 +400,14 @@ def build(job: Job, s: Settings, dry_run: bool = False) -> list[dict]:
             "text_column": job.text_column,
             "id_column": job.id_column,
             "input_root": str(job.input_root),
-            "shards": [{k: v for k, v in sh.items() if k != "doc_ids"} for sh in shard_info],
+            "shards": [{k: v for k, v in sh.items() if k not in ("doc_ids", "doc_keys")}
+                       for sh in shard_info],
+            # id_column values are not per-document in most GPT-NL corpora;
+            # doc_keys ("<source file>:<row>") locate each document exactly.
+            "ids_unique": ids_unique,
             "doc_ids": [sh["doc_ids"] for sh in shard_info],
-            "source_files": [f.relative_to(job.input_root).as_posix() for f in files],
+            "doc_keys": [sh["doc_keys"] for sh in shard_info],
+            "source_files": rel_files,
             "script_git_hash": commit,
             "timestamp": stamp,
         }

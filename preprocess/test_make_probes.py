@@ -149,3 +149,21 @@ def test_balance_on_mock_corpora(tmp_path, corpus_dir):
             assert r["ratio"] <= 1.10 and r["min_shard_docs"] >= 4
         else:
             assert r["reason"] != "ok"
+
+
+def test_doc_keys_locate_source_rows(built):
+    """doc_keys point at the exact source rows, even when ids are not unique."""
+    tmp, s, rows = built
+    r = next(r for r in rows if r["feasible"])
+    d = probe_paths(tmp, r["size_frac"])
+    m = json.loads((d / "manifest.json").read_text())
+    src = {}
+    for sh, keys in zip(m["shards"], m["doc_keys"]):
+        shard_text = pq.read_table(d / sh["file"])["text"].to_pylist()
+        for text, k in zip(shard_text, keys):
+            f, row = k.rsplit(":", 1)
+            if f not in src:
+                src[f] = pq.read_table(tmp / "corpus" / f)["text"].to_pylist()
+            assert src[f][int(row)] == text
+    all_keys = [k for ks in m["doc_keys"] for k in ks]
+    assert len(set(all_keys)) == len(all_keys)
